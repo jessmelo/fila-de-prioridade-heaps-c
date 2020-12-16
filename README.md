@@ -1,2 +1,6 @@
 # fila-de-prioridade-heaps-c
- fila de prioridade com heap máximo
+ fila de prioridade utilizando heap máximo
+
+ para compilar:
+
+ - gcc usaFilaDePrioridade.c
