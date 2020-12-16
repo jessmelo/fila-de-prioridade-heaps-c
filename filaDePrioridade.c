@@ -5,7 +5,6 @@
 /**                                                                 **/
 /**   EP3 - Fila de Prioridade (utilizando heap)                    **/
 /**                                                                 **/
-/**   Jéssica da Paixão Melo                  Nº USP: 10875986      **/
 /**                                                                 **/
 /*********************************************************************/
 
@@ -46,17 +45,64 @@ int tamanho(PFILA f){
   return tam;
 }
 
-PFILA reorganizaHeap(PFILA f){
+void reorganizaHeapInsercao(PFILA f, int i){
+  int pai = (i - 1 ) / 2;
+  if(f->heap[pai]->prioridade < f->heap[i]->prioridade){
+    int aux_pai = f->heap[pai]->posicao;
+    int aux_filho = f->heap[i]->posicao;
 
+    PONT aux_pai_el = f->heap[pai];
+    PONT aux_filho_el = f->heap[i];
 
+    f->heap[aux_filho] = aux_pai_el;
+    f->heap[aux_filho]->posicao = aux_filho;
+
+    f->heap[aux_pai] = aux_filho_el;
+    f->heap[aux_pai]->posicao = aux_pai;
+
+    reorganizaHeapInsercao(f, aux_pai);
+  } 
 }
 
+void reorganizaHeapRemocao(PFILA f, int i){
+  int filho_esquerda = 2*i+1;
+  int filho_direita = 2*i+2;
+  int maior_filho;
+
+  if (f->heap[filho_esquerda] != NULL || f->heap[filho_direita] != NULL){
+    if(f->heap[filho_esquerda] == NULL) {
+      maior_filho = filho_direita;
+    } else if(f->heap[filho_direita] == NULL){
+      maior_filho = filho_esquerda;
+    } else {
+      if(f->heap[filho_esquerda]->prioridade > f->heap[filho_direita]->prioridade){
+        maior_filho = filho_esquerda;
+      } else {
+        maior_filho = filho_direita;
+      }
+
+      if(f->heap[i]->prioridade < f->heap[maior_filho]->prioridade){
+        int aux_pai = f->heap[i]->posicao;
+        int aux_filho = f->heap[maior_filho]->posicao;
+
+        PONT aux_pai_el = f->heap[i];
+        PONT aux_filho_el = f->heap[maior_filho];
+
+        f->heap[aux_filho] = aux_pai_el;
+        f->heap[aux_filho]->posicao = aux_filho;
+
+        f->heap[aux_pai] = aux_filho_el;
+        f->heap[aux_pai]->posicao = aux_pai;
+
+        reorganizaHeapRemocao(f, aux_filho);
+      }
+    }
+  }
+}
 
 bool inserirElemento(PFILA f, int id, float prioridade){
   bool res = false;
   
-  /* COMPLETAR */
-
   if(id < 0 || id >= f->maxElementos || f->arranjo[id] != NULL) return false;
 
   PONT novoElemento = malloc(sizeof(ELEMENTO));
@@ -71,12 +117,13 @@ bool inserirElemento(PFILA f, int id, float prioridade){
       f->heap[i] = novoElemento;
       novoElemento->posicao = i;
       f->elementosNoHeap++;
-      i = f->maxElementos;
+      i = f->maxElementos+1;
     }
   }
 
-  reorganizaHeap(f);
+  reorganizaHeapInsercao(f, novoElemento->posicao);
 
+  res = true;
   return res;
 }
 
@@ -87,6 +134,11 @@ bool aumentarPrioridade(PFILA f, int id, float novaPrioridade){
   
   if(f->arranjo[id]->prioridade >= novaPrioridade) return false;
 
+  f->arranjo[id]->prioridade = novaPrioridade;
+
+  reorganizaHeapInsercao(f, f->arranjo[id]->posicao);
+
+  res = true;
   return res;
 }
 
@@ -97,19 +149,34 @@ bool reduzirPrioridade(PFILA f, int id, float novaPrioridade){
   
   if(f->arranjo[id]->prioridade <= novaPrioridade) return false;
   
+  f->arranjo[id]->prioridade = novaPrioridade;
+
+  reorganizaHeapRemocao(f, f->arranjo[id]->posicao);
+  
+  res = true;
   return res;
 }
 
 PONT removerElemento(PFILA f){
   PONT res = NULL;
-  
-  /* COMPLETAR */
-  
+    
   if(tamanho(f) == 0) return res;
+  
+  // removendo do arranjo:
+  res = f->heap[0];
+  int aux_id = f->heap[0]->id;
+  f->arranjo[aux_id] = NULL;
 
-  f->heap[0] = NULL;
+  // reorganizando o heap:
+
+  int ultimoElemento = f->elementosNoHeap-1;
+
+  f->heap[0] = f->heap[ultimoElemento];
+  f->heap[0]->posicao = 0;
+  f->heap[ultimoElemento] = NULL;
   f->elementosNoHeap--;
 
+  reorganizaHeapRemocao(f, 0);
 
   return res;
 }
